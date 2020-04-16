@@ -1,3 +1,3 @@
 module.exports = {
-  secret: require('./secret')
+  secret: require('./secret.config')
 };

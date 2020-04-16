@@ -1,5 +1,8 @@
 'use strict';
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const configs = require('../configs');
+
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
@@ -13,10 +16,6 @@ const UserSchema = new Schema({
     type: String,
     required: true,
     trim: true
-  },
-  roles: {
-    type: String,
-    default: 'user'
   },
   email: {
     type: String,
@@ -55,6 +54,9 @@ const UserSchema = new Schema({
     enum: ['active', 'deactive'],
     default: 'active'
   },
+  lang: {
+    type: String
+  },
   created_date: {
     type: Date,
     default: Date.now
@@ -76,5 +78,47 @@ const UserSchema = new Schema({
       }
   }]
 });
+
+UserSchema.methods.generateToken = function() {
+  const token = jwt.sign(
+    {
+      user: {
+        _id: this._id,
+        email: this.email,
+        displayName: this.user_name,
+        roles: this.roles
+      }
+    },
+    configs.secret.SESSION_SECRET,
+    {
+      algorithm: "HS256",
+      expiresIn: 86400
+    }
+  );
+  this.tokens = this.tokens.concat({ token });
+  return token;
+}
+
+UserSchema.methods.getInfoNoPassword = function() {
+  return {
+    _id: this._id,
+    user_name: this.user_name,
+    email: this.email,
+    first_name: this.first_name,
+    last_name: this.last_name,
+    birthday: this.birthday,
+    gender: this.gender,
+    marital_status: this.marital_status,
+    address: this.address,
+    mobile: this.mobile,
+    avatar: this.avatar,
+    status: this.status,
+    created_date: this.created_date,
+    created_by: this.created_by,
+    updated_date: this.updated_date,
+    updated_by: this.updated_by,
+    roles: this.roles
+  }
+}
 
 module.exports = mongoose.model('User', UserSchema);
