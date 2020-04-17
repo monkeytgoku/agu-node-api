@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const configs = require('../configs');
+const appConfig = require('../configs/app.config');
 const bcrypt = require('bcrypt');
 
 const authController = {};
@@ -29,12 +30,12 @@ authController.login = function (req, res) {
 					// A Cookie can be marked as Secure, meaning that the browser will only append the cookie to the request
 					// if it's being made over an HTTPS connection
 					// Cookie can also be marked as Http Only, meaning that it's not accessible by the Javascript code at all
-					res.cookie("SESSION_ID", token, { maxAge: 84600000, httpOnly: true, secure: false });
+					res.cookie("SESSION_ID", token, { maxAge: appConfig.cookieLifeTime*1000, httpOnly: true, secure: false });
 					return res.status(200).json({
 						message: 'Login success!',
 						user: user.getInfoNoPassword(),
 						token: token,
-						expiresIn: 86400
+						expiresIn: appConfig.tokenLifeTime
 					})
 				}
 				return res.status(400).json({
@@ -58,9 +59,7 @@ authController.logout = async function (req, res) {
 	//     return res.status(500).json({ error: err });
 	// }
 
-	// Log user out of all devices
-	console.log('logout');
-	
+	// Log user out of all devices	
 	try {
 		res.clearCookie("SESSION_ID");
 		req.user.tokens.splice(0, req.user.tokens.length);
@@ -80,7 +79,7 @@ authController.refresh = function (req, res) {
 			} else {
 				const user = await User.findOne({ _id: decoded.user._id, 'tokens.token': token });
 				if (!user) {
-					return res.status(403).json({ message: 'Access Denied!' });
+					return res.status(400).json({ message: 'Please login again!' });
 				}
 				const newToken = user.generateToken();
 				await user.save();
@@ -92,12 +91,12 @@ authController.refresh = function (req, res) {
 					message: 'Refresh token success!',
 					user: user.getInfoNoPassword(),
 					token: newToken,
-					expiresIn: 86400
+					expiresIn: appConfig.tokenLifeTime
 				})
 			}
 		});
 	} else {
-		return res.status(403).json({ message: 'Access Denied!' });
+		return res.status(400).json({ message: 'Please login again!' });
 	}
 }
 

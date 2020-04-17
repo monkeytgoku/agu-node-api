@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const configs = require('../configs');
+const appConfig = require('../configs/app.config');
 
 const Schema = mongoose.Schema;
 
@@ -92,7 +93,7 @@ UserSchema.methods.generateToken = function() {
     configs.secret.SESSION_SECRET,
     {
       algorithm: "HS256",
-      expiresIn: 86400
+      expiresIn: appConfig.tokenLifeTime
     }
   );
   this.tokens = this.tokens.concat({ token });
